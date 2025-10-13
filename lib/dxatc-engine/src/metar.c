@@ -81,6 +81,7 @@ int dxAtcMetarParse(const char* string, DxAtcMetar* metar)
         if (parsefuncs[stage](&stage, tok, metar))
             success++;
     }
+    free(string_dup);
     printf("got %d of %d stages\n", success, _DXATC_ENGINE_METAR_PARSE_STAGE_COUNT);
 
     return 1;
@@ -196,7 +197,7 @@ int _dxAtcMetarParseStage_VisibilityCorr(_DxAtcMetarParseStage* stage, const cha
         return _dxAtcMetarParseStage_Precip(stage, tok, metar);
     }    
 
-    float num, denom, visconv;
+    float num, denom;
     sscanf(tok, "%f/%fSM", &num, &denom);
     metar->visibility = ((float)metar->visibility + (num / denom)) * DXATC_UTILS_MACROS_SM_TO_KM;
 
@@ -288,6 +289,7 @@ void _dxAtcMetarParseState_OATDewPt_ParseTemp(const char* temp, int* dest)
     }
 
     sscanf(realtemp, "%d", dest);
+    *dest*= mul;
 }
 int _dxAtcMetarParseStage_OATDewPt(_DxAtcMetarParseStage* stage, const char* tok, DxAtcMetar* metar)
 {

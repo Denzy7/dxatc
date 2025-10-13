@@ -3,6 +3,9 @@ project(dxatc VERSION 0.1)
 
 option(DXATC_BUILD_TESTS "Build tests" ON)
 
+if(MSYS OR UNIX OR MINGW)
+    add_compile_options("-Wall" "-Wextra" "-Wformat")
+endif()
 #if(NOT DXATC_XPSDK)
     #message(FATAL_ERROR "Supply xplane sdk with -DDXATC_XPSDK=<dir>. <dir> should have a CHeaders directory")
 #endif()

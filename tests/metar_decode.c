@@ -1,12 +1,17 @@
 #include <dxatc-engine/metar.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 int main(int argc, char* argv[])
 {
     DxAtcMetar metar;
     memset(&metar, 0, sizeof(metar));
     const char* metar_str = "METAR XYAB 011200Z VRB12G15KT 6000 TSRA FEW010 BKN025CB OVC///TCU 21/20 Q0999";
+    if(argc > 1)
+        metar_str = argv[1];
+    void* x = malloc(1);
+    printf("%p\n", x);
     dxAtcMetarInit(&metar);
     if(!dxAtcMetarParse(metar_str, &metar))
     {
@@ -60,7 +65,7 @@ int main(int argc, char* argv[])
     if(metar.wind.variable_x && metar.wind.variable_y)
         snprintf(wind_variable, sizeof(wind_variable), " variable between %d and %d", metar.wind.variable_x, metar.wind.variable_y);
 
-    char wind[128];
+    char wind[256];
     memset(wind, 0, sizeof(wind));
     if(metar.wind.speed <= 3)
     {
