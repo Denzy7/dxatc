@@ -1,0 +1,41 @@
+#ifndef DXATC_ENGINE_CONTROLLER_H
+#define DXATC_ENGINE_CONTROLLER_H
+
+#include "dxatc-engine/frequency.h"
+#include "dxatc-engine/types.h"
+
+typedef enum
+{
+    DXATC_ENGINE_CONTROLLER_TYPE_ATIS,
+    DXATC_ENGINE_CONTROLLER_TYPE_CLEARANCE,
+    DXATC_ENGINE_CONTROLLER_TYPE_GROUND,
+    DXATC_ENGINE_CONTROLLER_TYPE_TOWER,
+    DXATC_ENGINE_CONTROLLER_TYPE_APPROACH,
+    DXATC_ENGINE_CONTROLLER_TYPE_DEPARTURE,
+    DXATC_ENGINE_CONTROLLER_TYPE_CENTRE,
+
+    DXATC_ENGINE_CONTROLLER_TYPE_COUNT
+}DxAtcControllerType;
+
+typedef enum
+{
+    DXATC_ENGINE_CONTROLLER_PRESSUREUNIT_QNH,
+    DXATC_ENGINE_CONTROLLER_PRESSUREUNIT_INHG,
+    /* DXATC_ENGINE_CONTROLLER_PRESSUREUNIT_MBAR, */
+
+    DXATC_ENGINE_CONTROLLER_PRESSUREUNIT_COUNT
+}DxAtcControllerPressureUnit;
+
+typedef struct
+{
+    DxAtcControllerType type;
+    DxAtcControllerPressureUnit pressureunit;
+    DxAtcFrequency freq;
+    DxAtcLatLon latlon;
+    int range;
+
+    char* name;
+}DxAtcController;
+
+#endif
+

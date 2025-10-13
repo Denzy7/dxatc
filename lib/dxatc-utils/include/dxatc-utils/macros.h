@@ -1,0 +1,12 @@
+#ifndef DXATC_UTILS_MACROS_H
+#define DXATC_UTILS_MACROS_H
+
+#ifdef __cplusplus
+#define DXATC_UTILS_MACROS_CDECLS_BEGIN extern "C" {
+#define DXATC_UTILS_MACROS_CDECLS_END }
+#else
+#define DXATC_UTILS_MACROS_CDECLS_BEGIN
+#define DXATC_UTILS_MACROS_CDECLS_END
+#endif
+
+#endif

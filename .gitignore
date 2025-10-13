@@ -1,0 +1,6 @@
+.cache
+*.log
+*.vim
+build/*
+*.user*
+priv
