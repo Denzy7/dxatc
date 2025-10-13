@@ -13,9 +13,9 @@ typedef enum
 
 typedef enum
 {
-    DXATC_ENGINE_WEATHER_CLOUD_FLAG_NONE = 0,
-    DXATC_ENGINE_WEATHER_CLOUD_FLAG_CB = 1,
-    DXATC_ENGINE_WEATHER_CLOUD_FLAG_TCU = 2,
+    DXATC_ENGINE_WEATHER_CLOUD_FLAG_NONE,
+    DXATC_ENGINE_WEATHER_CLOUD_FLAG_CB,
+    DXATC_ENGINE_WEATHER_CLOUD_FLAG_TCU,
 
     //DXATC_ENGINE_WEATHER_CLOUD_FLAG_ALL = 0x7fffffff
 }DxAtcWeatherCloudFlag;
@@ -41,6 +41,7 @@ typedef struct
 {
     DxAtcWeatherCloudType type;
     DxAtcWeatherCloudFlag flags;
+    int agl;
 }DxAtcWeatherCloud;
 
 typedef struct

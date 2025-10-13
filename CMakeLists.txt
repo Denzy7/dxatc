@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 project(dxatc VERSION 0.1)
 
-option(DXATC_BUILD_TESTS "Build tests" OFF)
+option(DXATC_BUILD_TESTS "Build tests" ON)
 
 #if(NOT DXATC_XPSDK)
     #message(FATAL_ERROR "Supply xplane sdk with -DDXATC_XPSDK=<dir>. <dir> should have a CHeaders directory")
@@ -34,6 +34,6 @@ include_directories(${DXATC_ENGINE_INCLUDE_DIRS})
 ##
 
 add_subdirectory(lib/dxatc-engine)
-#if(DXATC_BUILD_TESTS)
-    #add_subdirectory(tests)
-#endif()
+if(DXATC_BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
