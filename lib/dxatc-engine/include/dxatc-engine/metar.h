@@ -25,6 +25,9 @@ typedef struct
 
 DXATC_UTILS_MACROS_CDECLS_BEGIN
 
+int dxAtcMetarInit(DxAtcMetar* metar);
+void dxAtcMetarFree(DxAtcMetar* metar);
+
 int dxAtcMetarParse(const char* string, DxAtcMetar* metar);
 
 DXATC_UTILS_MACROS_CDECLS_END

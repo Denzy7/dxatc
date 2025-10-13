@@ -33,6 +33,7 @@ set(DXATC_ENGINE_INCLUDE_DIRS
 include_directories(${DXATC_ENGINE_INCLUDE_DIRS})
 ##
 
+add_subdirectory(lib/dxatc-utils)
 add_subdirectory(lib/dxatc-engine)
 if(DXATC_BUILD_TESTS)
     add_subdirectory(tests)

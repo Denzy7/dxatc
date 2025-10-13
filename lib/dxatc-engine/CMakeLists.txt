@@ -20,3 +20,4 @@ set(dxatc-engine-src
 )
 
 add_library(dxatc-engine ${dxatc-engine-hdr} ${dxatc-engine-src})
+target_link_libraries(dxatc-engine PRIVATE dxatc-utils)

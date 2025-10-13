@@ -6,15 +6,29 @@ int main(int argc, char* argv[])
 {
     DxAtcMetar metar;
     memset(&metar, 0, sizeof(metar));
-    const char* metar_str = "";
+    const char* metar_str = "METAR XYAB 011200Z VRB12G15KT 6000 TSRA FEW010 BKN025CB OVC///TCU 21/20 Q0999";
+    dxAtcMetarInit(&metar);
     if(!dxAtcMetarParse(metar_str, &metar))
     {
         printf("can't parse metar");
         return 1;
     }
 
+    /*set 1 to overwrite with test data (metar_str decoded)*/
+#if 0
     snprintf(metar.icao, sizeof(metar.icao), "XYAB");
     snprintf(metar.zulu, sizeof(metar.icao), "1200");
+
+    metar.wind.direction = -1;
+    metar.wind.speed = 12;
+    metar.wind.gust = 15;
+    metar.wind.variable_x = 120;
+    metar.wind.variable_y = 300;
+
+    metar.visibility = 6000;
+
+    metar.precip.intensity = DXATC_ENGINE_WEATHER_PRECIP_INTENSITY_MODERATE;
+    metar.precip.type = DXATC_ENGINE_WEATHER_PRECIP_TYPE_TS | DXATC_ENGINE_WEATHER_PRECIP_TYPE_RA;
 
     DxAtcWeatherCloud cloud1 = {DXATC_ENGINE_WEATHER_CLOUD_TYPE_FEW, DXATC_ENGINE_WEATHER_CLOUD_FLAG_NONE, 1000};
     DxAtcWeatherCloud cloud2 = {DXATC_ENGINE_WEATHER_CLOUD_TYPE_BKN, DXATC_ENGINE_WEATHER_CLOUD_FLAG_CB, 2500};
@@ -23,17 +37,11 @@ int main(int argc, char* argv[])
         &cloud1, &cloud2, &cloud3, NULL
     };
     metar.sky = clouds;
-    metar.precip.intensity = DXATC_ENGINE_WEATHER_PRECIP_INTENSITY_MODERATE;
-    metar.precip.type = DXATC_ENGINE_WEATHER_PRECIP_TYPE_TS | DXATC_ENGINE_WEATHER_PRECIP_TYPE_RA;
-    metar.visibility = 6000;
-    metar.wind.direction = -1;
-    metar.wind.speed = 12;
-    metar.wind.gust = 15;
-    metar.wind.variable_x = 120;
-    metar.wind.variable_y = 300;
+
     metar.oat = 21;
-    metar.dewpt = 21;
+    metar.dewpt = 20;
     metar.qnh = 999;
+#endif
 
     char wind_gust[64];
     memset(wind_gust, 0, sizeof(wind_gust));
@@ -100,7 +108,7 @@ int main(int argc, char* argv[])
         }else if(metar.precip.type == DXATC_ENGINE_WEATHER_PRECIP_TYPE_DZ){
             snprintf(type, sizeof(type), "drizzle");
         }
-        snprintf(precip, sizeof(precip), "%s%s. ", intensity, type);
+        snprintf(precip, sizeof(precip), "%s%s%s. ", intensity, type, metar.precip.vicinity ? " in the vicinity of the airport" : "");
     }
 
     char sky[512];
@@ -166,4 +174,6 @@ int main(int argc, char* argv[])
             metar.oat, metar.dewpt,
             metar.qnh
             );
+
+    dxAtcMetarFree(&metar);
 }
