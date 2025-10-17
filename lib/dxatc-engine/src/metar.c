@@ -73,7 +73,7 @@ int dxAtcMetarParse(const char* string, DxAtcMetar* metar)
         _dxAtcMetarParseStage_OATDewPt,
         _dxAtcMetarParseStage_QNH,
     };
-    printf("parse: %s\n", string);
+    /*printf("parse: %s\n", string);*/
 
     while((tok = strtok(string_ontok, " ")) && stage < _DXATC_ENGINE_METAR_PARSE_STAGE_COUNT)
     {
@@ -82,7 +82,7 @@ int dxAtcMetarParse(const char* string, DxAtcMetar* metar)
             success++;
     }
     free(string_dup);
-    printf("got %d of %d stages\n", success, _DXATC_ENGINE_METAR_PARSE_STAGE_COUNT);
+    /*printf("got %d of %d stages\n", success, _DXATC_ENGINE_METAR_PARSE_STAGE_COUNT);*/
 
     return 1;
 }
@@ -178,7 +178,7 @@ int _dxAtcMetarParseStage_Visibility(_DxAtcMetarParseStage* stage, const char* t
         else{
             sscanf(tok, "%fSM", &visconv);
         }
-        metar->visibility = visconv * DXATC_UTILS_MACROS_SM_TO_KM;
+        metar->visibility = visconv * DXATC_UTILS_MACROS_SM_TO_KM * 1000;
     }else {
         sscanf(tok, "%4d", &metar->visibility);
     }
@@ -199,7 +199,7 @@ int _dxAtcMetarParseStage_VisibilityCorr(_DxAtcMetarParseStage* stage, const cha
 
     float num, denom;
     sscanf(tok, "%f/%fSM", &num, &denom);
-    metar->visibility = ((float)metar->visibility + (num / denom)) * DXATC_UTILS_MACROS_SM_TO_KM;
+    metar->visibility = ((float)metar->visibility + (num / denom)) * DXATC_UTILS_MACROS_SM_TO_KM * 1000;
 
     *stage = *stage + 1;
     return 1;
@@ -217,13 +217,18 @@ int _dxAtcMetarParseStage_Precip(_DxAtcMetarParseStage* stage, const char* tok, 
     if(strstr(tok, "VC"))
         metar->precip.vicinity = 1;
 
-    if(metar->precip.type)
+    if(metar->precip.type){
         metar->precip.intensity = DXATC_ENGINE_WEATHER_PRECIP_INTENSITY_MODERATE;
+        if(strchr(tok, '+'))
+            metar->precip.intensity = DXATC_ENGINE_WEATHER_PRECIP_INTENSITY_HEAVY;
+        else if(strchr(tok, '-'))
+            metar->precip.intensity = DXATC_ENGINE_WEATHER_PRECIP_INTENSITY_LIGHT;
+    }else{
+        /* we may have received a sky token */
+        *stage = *stage + 1;
+        return _dxAtcMetarParseStage_Sky(stage, tok, metar);
+    };
 
-    if(strchr(tok, '+'))
-        metar->precip.intensity = DXATC_ENGINE_WEATHER_PRECIP_INTENSITY_HEAVY;
-    else if(strchr(tok, '-'))
-        metar->precip.intensity = DXATC_ENGINE_WEATHER_PRECIP_INTENSITY_LIGHT;
     *stage = *stage + 1;
     return 1;
 }
@@ -243,36 +248,44 @@ int _dxAtcMetarParseStage_Sky(_DxAtcMetarParseStage* stage, const char* tok, DxA
         if(tok[i] == '/')
             slashes++;
     }
-    if(slashes == 1 || metar->visibility == 10000)
+    if(slashes == 1 || metar->visibility == 10000 || strstr(tok, "CLR"))
     {
         *stage = *stage + 1;
         return _dxAtcMetarParseStage_OATDewPt(stage, tok, metar);
     }
 
     char type[4];
-    DxAtcWeatherCloud* cloud = calloc(1, sizeof(DxAtcWeatherCloud));
-    sscanf(tok, "%3s%3d%*3c", type, &cloud->agl);
+    DxAtcWeatherCloud cloud;
+    memset(&cloud, 0, sizeof(cloud));
+    sscanf(tok, "%3s%3d%*3c", type, &cloud.agl);
 
     if(!strcmp(type, "FEW"))
-        cloud->type = DXATC_ENGINE_WEATHER_CLOUD_TYPE_FEW;
+        cloud.type = DXATC_ENGINE_WEATHER_CLOUD_TYPE_FEW;
     else if(!strcmp(type, "SCT"))
-        cloud->type = DXATC_ENGINE_WEATHER_CLOUD_TYPE_SCT;
+        cloud.type = DXATC_ENGINE_WEATHER_CLOUD_TYPE_SCT;
     else if(!strcmp(type, "BKN"))
-        cloud->type = DXATC_ENGINE_WEATHER_CLOUD_TYPE_BKN;
+        cloud.type = DXATC_ENGINE_WEATHER_CLOUD_TYPE_BKN;
     else if(!strcmp(type, "OVC"))
-        cloud->type = DXATC_ENGINE_WEATHER_CLOUD_TYPE_OVC;
+        cloud.type = DXATC_ENGINE_WEATHER_CLOUD_TYPE_OVC;
 
     if(strstr(tok, "CB"))
-        cloud->flags = DXATC_ENGINE_WEATHER_CLOUD_FLAG_CB;
+        cloud.flags = DXATC_ENGINE_WEATHER_CLOUD_FLAG_CB;
     else if(strstr(tok, "TCU"))
-        cloud->flags = DXATC_ENGINE_WEATHER_CLOUD_FLAG_TCU;
+        cloud.flags = DXATC_ENGINE_WEATHER_CLOUD_FLAG_TCU;
 
     if(slashes == 3)
-        cloud->agl = 0;
+        cloud.agl = 0;
 
-    cloud->agl *= 100;
+    cloud.agl *= 100;
 
-    vvtor_push((void***)&metar->sky, cloud);
+    if(!cloud.type){
+        /* could be an UP token */
+        return 0;
+    }else {
+        DxAtcWeatherCloud* _c = calloc(1, sizeof(DxAtcWeatherCloud));
+        memcpy(_c, &cloud, sizeof(cloud));
+        vvtor_push((void***)&metar->sky, _c);
+    }
 
     return 1;
 

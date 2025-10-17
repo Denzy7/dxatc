@@ -10,8 +10,7 @@ int main(int argc, char* argv[])
     const char* metar_str = "METAR XYAB 011200Z VRB12G15KT 6000 TSRA FEW010 BKN025CB OVC///TCU 21/20 Q0999";
     if(argc > 1)
         metar_str = argv[1];
-    void* x = malloc(1);
-    printf("%p\n", x);
+
     dxAtcMetarInit(&metar);
     if(!dxAtcMetarParse(metar_str, &metar))
     {
@@ -78,9 +77,9 @@ int main(int argc, char* argv[])
     char visibility[32];
     memset(visibility, 0, sizeof(visibility));
     if(metar.visibility >= 9999)
-        snprintf(visibility, sizeof(visibility), "more than 10");
+        snprintf(visibility, sizeof(visibility), "more than 10 kilometers");
     else
-        snprintf(visibility, sizeof(visibility), "%d", metar.visibility);
+        snprintf(visibility, sizeof(visibility), "%d kilometers", metar.visibility);
 
     char precip[128];
     memset(precip, 0, sizeof(precip));
@@ -118,7 +117,7 @@ int main(int argc, char* argv[])
 
     char sky[512];
     memset(sky, 0, sizeof(sky));
-    if(metar.sky)
+    if(metar.sky && metar.sky[0])
     {
         int nsky = 0;
         size_t wsky = snprintf(sky, sizeof(sky), "conditions. ");
