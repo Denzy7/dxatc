@@ -51,6 +51,7 @@ void dxAtcMetarFree(DxAtcMetar* metar)
     }
     free(metar->sky);
 }
+
 int dxAtcMetarParse(const char* string, DxAtcMetar* metar)
 {
     char* string_dup = strdup(string);
@@ -336,3 +337,191 @@ int _dxAtcMetarParseStage_QNH(_DxAtcMetarParseStage* stage, const char* tok, DxA
     return 1;
 }
 
+int dxAtcMetarDecode(char* string, size_t length, DxAtcMetarDecodeFlag flags, const DxAtcMetar* metar)
+{
+    char wind_gust[64];
+    memset(wind_gust, 0, sizeof(wind_gust));
+    if(metar->wind.gust)
+        snprintf(wind_gust, sizeof(wind_gust), " gusting %d", metar->wind.gust);
+
+    char wind_direction[32];
+    memset(wind_direction, 0, sizeof(wind_direction));
+    if(metar->wind.direction < 0)
+        snprintf(wind_direction, sizeof(wind_direction), "variable");
+    else
+        snprintf(wind_direction, sizeof(wind_direction), "%d", metar->wind.direction);
+
+    char wind_variable[32];
+    memset(wind_variable, 0, sizeof(wind_variable));
+    if(metar->wind.variable_x && metar->wind.variable_y)
+        snprintf(wind_variable, sizeof(wind_variable), " variable between %d and %d", metar->wind.variable_x, metar->wind.variable_y);
+
+    char wind[256];
+    memset(wind, 0, sizeof(wind));
+    if(metar->wind.speed <= 3)
+    {
+        snprintf(wind, sizeof(wind), "light%s", metar->wind.direction < 0 ? " and variable" :"");
+    }else {
+        snprintf(wind, sizeof(wind), "%s at %d%s%s",
+                wind_direction, metar->wind.speed, wind_gust, wind_variable);
+    }
+
+    char visibility[64];
+    memset(visibility, 0, sizeof(visibility));
+    if(metar->visibility >= 9999)
+        snprintf(visibility, sizeof(visibility), "more than 10 kilometers");
+    else
+        snprintf(visibility, sizeof(visibility), "%d kilometers", metar->visibility);
+    if(flags & DXATC_ENGINE_METAR_DECODE_FLAG_VISIBILITY_SM)
+    {
+        float vis_sm = metar->visibility / 1000.0f * DXATC_UTILS_MACROS_KM_TO_SM; 
+        int vis_sm_whole = vis_sm;
+        float vis_sm_rem = (vis_sm - vis_sm_whole) * 100.0f;
+
+        char fract[16];
+        memset(fract, 0, sizeof(fract));
+
+        /* we lost some accuracy in the conversion.
+         * it wont be exactly 75 or 50*/
+
+        /* round off */
+        if(vis_sm_rem > 90){
+            vis_sm_rem = 0;
+            vis_sm_whole++;
+        }
+        if(vis_sm_rem >= 70)
+            snprintf(fract, sizeof(fract), "3 quarters");
+        else if(vis_sm_rem >= 45)
+            snprintf(fract, sizeof(fract), "a half");
+        else if(vis_sm_rem >= 20)
+            snprintf(fract, sizeof(fract), "a quarter");
+
+        if(vis_sm_whole >= 10)
+        {
+            snprintf(visibility, sizeof(visibility), "more than 10 statute miles");
+        }else if(vis_sm_whole >= 3)
+        {
+            snprintf(visibility, sizeof(visibility), "%d statute miles", vis_sm_whole);
+        }else if(vis_sm_whole >= 1){
+            if(vis_sm_rem)
+                snprintf(visibility, sizeof(visibility), "%d and %s statute miles", vis_sm_whole, fract);
+            else
+                snprintf(visibility, sizeof(visibility), "%d statute miles", vis_sm_whole);
+             ;
+        }else {
+            snprintf(visibility, sizeof(visibility), "%s statute miles", fract);
+        }
+    }
+
+    char precip[128];
+    memset(precip, 0, sizeof(precip));
+    if(metar->precip.type)
+    {
+        char intensity[32];
+        memset(intensity, 0, sizeof(intensity));
+        if(metar->precip.intensity == DXATC_ENGINE_WEATHER_PRECIP_INTENSITY_LIGHT)
+            snprintf(intensity, sizeof(intensity), "Light ");
+        else if(metar->precip.intensity == DXATC_ENGINE_WEATHER_PRECIP_INTENSITY_MODERATE)
+            snprintf(intensity, sizeof(intensity), "Moderate ");
+        else if(metar->precip.intensity == DXATC_ENGINE_WEATHER_PRECIP_INTENSITY_HEAVY)
+            snprintf(intensity, sizeof(intensity), "Heavy ");
+
+        char type[32];
+        memset(type, 0, sizeof(type));
+        if(metar->precip.type == DXATC_ENGINE_WEATHER_PRECIP_TYPE_TS){
+            snprintf(type, sizeof(type), "thunderstorms");
+        }else if(metar->precip.type & DXATC_ENGINE_WEATHER_PRECIP_TYPE_TS && 
+                metar->precip.type & DXATC_ENGINE_WEATHER_PRECIP_TYPE_RA){
+            snprintf(type, sizeof(type), "thunderstorms and rain");
+        }else if(metar->precip.type == DXATC_ENGINE_WEATHER_PRECIP_TYPE_SH)
+        {
+            snprintf(type, sizeof(type), "showers");
+        }else if(metar->precip.type & DXATC_ENGINE_WEATHER_PRECIP_TYPE_SH &&
+                metar->precip.type & DXATC_ENGINE_WEATHER_PRECIP_TYPE_RA){
+            snprintf(type, sizeof(type), "showers and rain");
+        }else if(metar->precip.type == DXATC_ENGINE_WEATHER_PRECIP_TYPE_RA){
+            snprintf(type, sizeof(type), "rain");
+        }else if(metar->precip.type == DXATC_ENGINE_WEATHER_PRECIP_TYPE_DZ){
+            snprintf(type, sizeof(type), "drizzle");
+        }
+        snprintf(precip, sizeof(precip), "%s%s%s. ", intensity, type, metar->precip.vicinity ? " in the vicinity of the airport" : "");
+    }
+
+    char sky[512];
+    memset(sky, 0, sizeof(sky));
+    if(metar->sky && metar->sky[0])
+    {
+        int nsky = 0;
+        size_t wsky = snprintf(sky, sizeof(sky), "conditions. ");
+        
+        while(metar->sky[nsky] && wsky < sizeof(sky))
+        {
+            int write = 0;
+
+            char type[16];
+            memset(type, 0, sizeof(type));
+            if(metar->sky[nsky]->type == DXATC_ENGINE_WEATHER_CLOUD_TYPE_FEW)
+                snprintf(type, sizeof(type), "Few");
+            else if(metar->sky[nsky]->type == DXATC_ENGINE_WEATHER_CLOUD_TYPE_SCT)
+                snprintf(type, sizeof(type), "Scattered");
+            else if(metar->sky[nsky]->type == DXATC_ENGINE_WEATHER_CLOUD_TYPE_BKN)
+                snprintf(type, sizeof(type), "Broken");
+            else if(metar->sky[nsky]->type == DXATC_ENGINE_WEATHER_CLOUD_TYPE_OVC)
+                snprintf(type, sizeof(type), "Overcast");
+
+            char flag[32];
+            memset(flag, 0, sizeof(flag));
+            if(metar->sky[nsky]->flags == DXATC_ENGINE_WEATHER_CLOUD_FLAG_CB)
+                snprintf(flag, sizeof(flag), "cumulonimbus");
+            else if(metar->sky[nsky]->flags == DXATC_ENGINE_WEATHER_CLOUD_FLAG_TCU)
+                snprintf(flag, sizeof(flag), "towering cumulonimbus");
+            else
+                snprintf(flag, sizeof(flag), "clouds");
+
+            char alt[16];
+            memset(alt, 0, sizeof(alt));
+            if(metar->sky[nsky]->agl)
+                snprintf(alt, sizeof(type), "at %d", metar->sky[nsky]->agl);
+            else
+                snprintf(alt, sizeof(type), "indefinite");
+
+            write = snprintf(sky + wsky, sizeof(sky) - wsky, "%s %s %s. ", type, flag, alt);
+
+            wsky += write;
+            nsky++;
+        }
+    }else {
+        snprintf(sky, sizeof(sky), "clear. ");
+    }
+
+    char altimeter[32];
+    memset(altimeter, 0, sizeof(altimeter));
+
+    snprintf(altimeter, sizeof(altimeter), "QNH %d", metar->qnh);
+    if(flags & DXATC_ENGINE_METAR_DECODE_FLAG_ALTIMETER_INHG)
+    {
+        /* +/- 3 error if we parsed inhg to hpa.
+         * doesn't justify storing inhg in a seprate variable :p*/
+        snprintf(altimeter, sizeof(altimeter), "Altimeter %d", (int)((float)metar->qnh * DXATC_UTILS_MACROS_HPA_TO_INHG * 100.0f));
+    }
+
+    snprintf(string, length,
+            "%s weather. Recorded time %s zulu. "
+            "Wind %s. "
+            "Visibility %s. "
+            "%s"
+            "Sky %s"
+            "Temperature %d. Dewpoint %d. "
+            "%s"
+            "\n",
+            metar->icao, metar->zulu, 
+            wind,
+            visibility,
+            precip,
+            sky,
+            metar->oat, metar->dewpt,
+            altimeter
+            );
+
+    return 1;
+}
