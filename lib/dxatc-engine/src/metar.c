@@ -368,15 +368,15 @@ int dxAtcMetarDecode(char* string, size_t length, DxAtcMetarDecodeFlag flags, co
 
     char visibility[64];
     memset(visibility, 0, sizeof(visibility));
-    int vis_km = metar->visibility;
-    if(vis_km % 100){
-        vis_km /= 100;
-        vis_km *= 100;
+    int vis_mtrs = metar->visibility;
+    if(vis_mtrs % 100){
+        vis_mtrs /= 100;
+        vis_mtrs *= 100;
     }
     if(metar->visibility >= 9999)
-        snprintf(visibility, sizeof(visibility), "more than 10 kilometers");
+        snprintf(visibility, sizeof(visibility), "more than 10000 meters");
     else
-        snprintf(visibility, sizeof(visibility), "%d kilometers", vis_km);
+        snprintf(visibility, sizeof(visibility), "%d meters", vis_mtrs);
 
     if(flags & DXATC_ENGINE_METAR_DECODE_FLAG_VISIBILITY_SM)
     {
