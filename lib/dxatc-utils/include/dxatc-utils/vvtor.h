@@ -6,10 +6,18 @@
  * original vtor: https://github.com/Denzy7/dengine/tree/main/lib/dengine-utils/include/dengine-utils/vtor.h
  */
 
+#ifdef _cplusplus
+extern "C" {
+#endif
+
 /* pass your vvtor** reference here. free(vvtor**) when done */
 int vvtor_init(void*** vvtor);
 /* pass your vvtor** reference here and the value to pushback. when freeing vtor, remember to free values inside if they were heap allocated*/
 int vvtor_push(void*** vvtor, const void* value);
+
+#ifdef _cplusplus
+}
+#endif
 
 #endif
 
@@ -20,8 +28,9 @@ int vvtor_push(void*** vvtor, const void* value);
 #include <stddef.h>
 int vvtor_init(void*** vvtor)
 {
+    char** cptr = NULL;
     *vvtor = malloc(4 * sizeof(void*));
-    char** cptr = (char**)*vvtor;
+    cptr = (char**)*vvtor;
     cptr[0] = NULL;
     cptr[1] = NULL;
     cptr[2] = NULL;

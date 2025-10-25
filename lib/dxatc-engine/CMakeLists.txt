@@ -17,7 +17,13 @@ set(dxatc-engine-hdr
 
 set(dxatc-engine-src
     src/metar.c
+    src/metar_xplane.c
 )
+set(dxatc-engine-link dxatc-utils)
+
+if(WIN32)
+    list(APPEND dxatc-engine-link ws2_32)
+endif()
 
 add_library(dxatc-engine ${dxatc-engine-hdr} ${dxatc-engine-src})
-target_link_libraries(dxatc-engine PRIVATE dxatc-utils)
+target_link_libraries(dxatc-engine PRIVATE ${dxatc-engine-link})

@@ -7,8 +7,20 @@
 int main(int argc, char* argv[])
 {
     DxAtcMetar metar;
-    memset(&metar, 0, sizeof(metar));
     const char* metar_str = "METAR XYAB 011200Z VRB12G15KT 6000 TSRA FEW010 BKN025CB OVC///TCU 21/20 Q0999";
+    /* set 1 to overwrite with test data (default metar_str decoded)*/
+#if 0
+    DxAtcWeatherCloud cloud1 = {DXATC_ENGINE_WEATHER_CLOUD_TYPE_FEW, DXATC_ENGINE_WEATHER_CLOUD_FLAG_NONE, 1000};
+    DxAtcWeatherCloud cloud2 = {DXATC_ENGINE_WEATHER_CLOUD_TYPE_BKN, DXATC_ENGINE_WEATHER_CLOUD_FLAG_CB, 2500};
+    DxAtcWeatherCloud cloud3 = {DXATC_ENGINE_WEATHER_CLOUD_TYPE_OVC, DXATC_ENGINE_WEATHER_CLOUD_FLAG_TCU, 0};
+    DxAtcWeatherCloud* clouds[] = {
+        &cloud1, &cloud2, &cloud3, NULL
+    };
+    DxAtcWeatherCloud** clouds_override;
+#endif
+    char decoded[2048];
+
+    memset(&metar, 0, sizeof(metar));
     if(argc > 1)
         metar_str = argv[1];
 
@@ -38,13 +50,7 @@ int main(int argc, char* argv[])
     metar.precip.intensity = DXATC_ENGINE_WEATHER_PRECIP_INTENSITY_MODERATE;
     metar.precip.type = DXATC_ENGINE_WEATHER_PRECIP_TYPE_TS | DXATC_ENGINE_WEATHER_PRECIP_TYPE_RA;
 
-    DxAtcWeatherCloud cloud1 = {DXATC_ENGINE_WEATHER_CLOUD_TYPE_FEW, DXATC_ENGINE_WEATHER_CLOUD_FLAG_NONE, 1000};
-    DxAtcWeatherCloud cloud2 = {DXATC_ENGINE_WEATHER_CLOUD_TYPE_BKN, DXATC_ENGINE_WEATHER_CLOUD_FLAG_CB, 2500};
-    DxAtcWeatherCloud cloud3 = {DXATC_ENGINE_WEATHER_CLOUD_TYPE_OVC, DXATC_ENGINE_WEATHER_CLOUD_FLAG_TCU, 0};
-    DxAtcWeatherCloud* clouds[] = {
-        &cloud1, &cloud2, &cloud3, NULL
-    };
-    DxAtcWeatherCloud** clouds_override;
+
     vvtor_init((void***)&clouds_override);
     for(size_t i = 0; i < 3; i++)
     {
@@ -59,7 +65,6 @@ int main(int argc, char* argv[])
     metar.qnh = 999;
 #endif
 
-    char decoded[2048];
     dxAtcMetarDecode(decoded, sizeof(decoded), 0, &metar);
     printf("%s", decoded);
 

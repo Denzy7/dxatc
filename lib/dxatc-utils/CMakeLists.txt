@@ -1,6 +1,7 @@
 set(dxatc-utils-hdr
     include/dxatc-utils/vvtor.h
     include/dxatc-utils/macros.h
+    include/dxatc-utils/socket.h
 )
 
 set(dxatc-utils-src
