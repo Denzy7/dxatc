@@ -1,10 +1,13 @@
 #include "dxatc-engine/metar_xplane.h"
+#include "dxatc-engine/latlon.h"
+
 #include "dxatc-utils/socket.h"
 #include "dxatc-utils/vvtor.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -43,35 +46,38 @@ struct dref_array
     float* out;
 };
 
-float cloud_type[3], cloud_base[3];
-/* we only need the first component,
- * we'll get all 3 to make xplane happy 
- */
-float wind_alt[3], wind_dir[3], wind_speed[3], wind_shear_dir[3], wind_shear_speed[3];
-float rain_pc, thunderstorm_pc;
-float baro_inhg;
-float temp, dewpt;
-float vis;
-
-static const struct dref_array drefs[] = 
+int dxAtcMetarXPlaneFetch(const char* ip, DxAtcMetar* metar, const DxAtcAirportDb* db)
 {
-    {"sim/weather/cloud_type", 3, cloud_type},
-    {"sim/weather/cloud_base_msl_m", 3, cloud_base},
-    {"sim/weather/wind_altitude_msl_m", 3, wind_alt},
-    {"sim/weather/wind_direction_degt", 3, wind_dir},
-    {"sim/weather/wind_speed_kt", 3, wind_speed},
-    {"sim/weather/shear_direction_degt", 3, wind_shear_dir},
-    {"sim/weather/shear_speed_kt", 3, wind_shear_speed},
-    {"sim/weather/rain_percent", 1, &rain_pc},
-    {"sim/weather/thunderstorm_percent", 1, &thunderstorm_pc},
-    {"sim/weather/barometer_sealevel_inhg", 1, &baro_inhg},
-    {"sim/weather/temperature_ambient_c", 1, &temp},
-    {"sim/weather/dewpoi_sealevel_c", 1, &dewpt}, /* hmmm? */
-    {"sim/weather/visibility_reported_m", 1, &vis}
-};
+    float cloud_type[3], cloud_base[3];
+    /* we only need the first component,
+     * we'll get all 3 to make xplane happy 
+     */
+    float wind_alt[3], wind_dir[3], wind_speed[3], wind_shear_dir[3], wind_shear_speed[3];
+    float rain_pc, thunderstorm_pc;
+    float baro_inhg;
+    float temp, dewpt;
+    float vis;
+    DxAtcLatLon acftlatlon;
 
-int dxAtcMetarXPlaneFetch(const char* ip, DxAtcMetar* metar)
-{
+    struct dref_array drefs[] = 
+    {
+        {"sim/weather/cloud_type", 3, cloud_type},
+        {"sim/weather/cloud_base_msl_m", 3, cloud_base},
+        {"sim/weather/wind_altitude_msl_m", 3, wind_alt},
+        {"sim/weather/wind_direction_degt", 3, wind_dir},
+        {"sim/weather/wind_speed_kt", 3, wind_speed},
+        {"sim/weather/shear_direction_degt", 3, wind_shear_dir},
+        {"sim/weather/shear_speed_kt", 3, wind_shear_speed},
+        {"sim/weather/rain_percent", 1, &rain_pc},
+        {"sim/weather/thunderstorm_percent", 1, &thunderstorm_pc},
+        {"sim/weather/barometer_sealevel_inhg", 1, &baro_inhg},
+        {"sim/weather/temperature_ambient_c", 1, &temp},
+        {"sim/weather/dewpoi_sealevel_c", 1, &dewpt}, /* hmmm? */
+        {"sim/weather/visibility_reported_m", 1, &vis},
+        {"sim/flightmodel/position/latitude", 1, &acftlatlon[0]},
+        {"sim/flightmodel/position/longitude", 1, &acftlatlon[1]},
+    };
+
     const char* ip_default = "localhost";
     char ip_resolved[64];
     struct addrinfo hints, *res = NULL;
@@ -97,6 +103,11 @@ int dxAtcMetarXPlaneFetch(const char* ip, DxAtcMetar* metar)
 
     DxAtcWeatherCloud clouds[3];
     DxAtcWeatherCloud* cloud = NULL;
+
+    DxAtcAirport* findapt = NULL;
+    int msl = 0;
+    float shortest = 999.0f, disttoplane;
+    time_t zulu;
  
     if(!metar->sky)
     {
@@ -229,17 +240,34 @@ int dxAtcMetarXPlaneFetch(const char* ip, DxAtcMetar* metar)
         i++;
     }
 
-    /* decode */
+    /* find nearest apt */
+    if(db){
+        for(size_t i = 0; i < db->airports_count; i++)
+        {
+            disttoplane = DxAtcLatLonDistanceNMI(acftlatlon, db->airports[i]->latlon);
+            if(disttoplane < shortest)
+            {
+                /*TODO: not as precise as using runway latlon */
+                dxAtcAirportDbFind(db->airports[i]->icao, &findapt, db);
+                shortest = disttoplane;
+            }
+        }
+    }
 
     memset(clouds, 0, sizeof(clouds));
+    if(findapt){
+        memcpy(metar->icao, findapt->icao, sizeof(metar->icao));
+        msl = findapt->elev_msl;
+    }
 
-    /* TODO: these altitudes are in msl, convert to
-     * agl using some sort of airport icao database 
-     * and corelated altitude in msl*/
+    time(&zulu);
+    strftime(metar->zulu, sizeof(metar->zulu),"%H%M", gmtime(&zulu));
+
+    /* decode */
     for(i = 0; i < 3; i++)
     {
         clouds[i].type = cloud_type[i];
-        clouds[i].agl = cloud_base[i] * DXATC_UTILS_MACROS_M_TO_FT;
+        clouds[i].agl = (cloud_base[i] * DXATC_UTILS_MACROS_M_TO_FT) - msl;
         clouds[i].agl /= 100;
         clouds[i].agl *= 100;
 
@@ -286,6 +314,7 @@ int dxAtcMetarXPlaneFetch(const char* ip, DxAtcMetar* metar)
         metar->precip.intensity = DXATC_ENGINE_WEATHER_PRECIP_INTENSITY_HEAVY;
     if(rain_pc < 0.25f || thunderstorm_pc < 0.25f)
         metar->precip.intensity = DXATC_ENGINE_WEATHER_PRECIP_INTENSITY_LIGHT;
+
 
     free(recvbuf);
     i = 0;

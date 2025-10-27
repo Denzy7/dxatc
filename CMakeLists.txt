@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.23)
-project(dxatc VERSION 0.1)
+project(dxatc VERSION 0.1.1)
 
 option(DXATC_BUILD_TESTS "Build tests" ON)
 

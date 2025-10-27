@@ -1,9 +1,11 @@
 set(dxatc-engine-hdr
     include/dxatc-engine
     include/dxatc-engine/metar.h
+    include/dxatc-engine/metar_xplane.h
     include/dxatc-engine/weather.h
     include/dxatc-engine/controller.h
     include/dxatc-engine/airport.h
+    include/dxatc-engine/airport_xplane.h
     include/dxatc-engine/aircraft.h
     include/dxatc-engine/airline.h
     include/dxatc-engine/types.h
@@ -18,8 +20,17 @@ set(dxatc-engine-hdr
 set(dxatc-engine-src
     src/metar.c
     src/metar_xplane.c
+    src/airport.c
+    src/airport_xplane.c
+    src/latlon.c
 )
 set(dxatc-engine-link dxatc-utils)
+
+find_library(libm m)
+
+if(libm)
+    list(APPEND dxatc-engine-link ${libm})
+endif()
 
 if(WIN32)
     list(APPEND dxatc-engine-link ws2_32)

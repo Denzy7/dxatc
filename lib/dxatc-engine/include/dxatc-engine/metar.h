@@ -3,6 +3,7 @@
 #include "dxatc-engine/weather.h"
 #include "dxatc-engine/types.h"
 #include "dxatc-utils/macros.h"
+#include "dxatc-engine/airport.h"
 
 #include <stddef.h>
 
@@ -38,7 +39,7 @@ void dxAtcMetarFree(DxAtcMetar* metar);
 
 int dxAtcMetarParse(const char* string, DxAtcMetar* metar);
 
-int dxAtcMetarDecode(char* string, size_t length, DxAtcMetarDecodeFlag flags, const DxAtcMetar* metar);
+int dxAtcMetarDecode(char* string, size_t length, DxAtcMetarDecodeFlag flags, const DxAtcMetar* metar, const DxAtcAirportDb* db);
 
 DXATC_UTILS_MACROS_CDECLS_END
 

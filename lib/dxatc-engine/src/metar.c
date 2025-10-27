@@ -345,7 +345,7 @@ int _dxAtcMetarParseStage_QNH(_DxAtcMetarParseStage* stage, const char* tok, DxA
     return 1;
 }
 
-int dxAtcMetarDecode(char* string, size_t length, DxAtcMetarDecodeFlag flags, const DxAtcMetar* metar)
+int dxAtcMetarDecode(char* string, size_t length, DxAtcMetarDecodeFlag flags, const DxAtcMetar* metar, const DxAtcAirportDb* db)
 {
     char wind_gust[64];
     char wind_direction[32];
@@ -359,6 +359,7 @@ int dxAtcMetarDecode(char* string, size_t length, DxAtcMetarDecodeFlag flags, co
     char flag[32];
     char alt[16];
     char altimeter[32];
+    DxAtcAirport* apt = NULL;
 
     memset(wind_gust, 0, sizeof(wind_gust));
     if(metar->wind.gust)
@@ -519,6 +520,11 @@ int dxAtcMetarDecode(char* string, size_t length, DxAtcMetarDecodeFlag flags, co
         snprintf(altimeter, sizeof(altimeter), "Altimeter %d", (int)((float)metar->qnh * DXATC_UTILS_MACROS_HPA_TO_INHG * 100.0f));
     }
 
+    if(db)
+    {
+        dxAtcAirportDbFind(metar->icao, &apt, db);
+    }
+
     snprintf(string, length,
             "%s weather. Recorded time %s zulu. "
             "Wind %s. "
@@ -528,7 +534,7 @@ int dxAtcMetarDecode(char* string, size_t length, DxAtcMetarDecodeFlag flags, co
             "Temperature %d. Dewpoint %d. "
             "%s"
             "\n",
-            metar->icao, metar->zulu, 
+            apt == NULL ? metar->icao : apt->name, metar->zulu, 
             wind,
             visibility,
             precip,

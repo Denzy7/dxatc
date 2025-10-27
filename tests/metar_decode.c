@@ -1,8 +1,11 @@
 #include <dxatc-engine/metar.h>
+#include <dxatc-engine/airport_xplane.h>
 #include <dxatc-utils/vvtor.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 int main(int argc, char* argv[])
 {
@@ -19,10 +22,49 @@ int main(int argc, char* argv[])
     DxAtcWeatherCloud** clouds_override;
 #endif
     char decoded[2048];
+    DxAtcAirportDb xpdb;
+    DxAtcAirportDb* xpdbref = NULL;
+    const char* xpdbdir = NULL;
 
     memset(&metar, 0, sizeof(metar));
-    if(argc > 1)
-        metar_str = argv[1];
+
+    for(int i = 0; i < argc; i++)
+    {
+        if(strstr(argv[i], "-xpdir") && argv[i + 1])
+            xpdbdir = argv[i + 1];
+
+        if(strstr(argv[i], "-metar") && argv[i + 1])
+            metar_str = argv[i + 1];
+    }
+
+
+    if(xpdbdir == NULL)
+    {
+        printf(
+                "if you have an installation of xplane, you can use it to get decoded airport names from its ICAO code "
+                "by passing -xpdir <dir> -metar \"metar_string\"\n\n");
+    }
+
+    if(argc == 2)
+        metar_str = argv[argc - 1];
+    else if(argc == 1)
+        printf("using test metar\n\n");
+
+    memset(&xpdb, 0, sizeof(xpdb));
+
+    if(xpdbdir)
+    {
+        printf("loading xp db... ");
+        fflush(stdout);
+        if(dxAtcAirportDbXPlaneLoad(xpdbdir, &xpdb))
+        {
+
+            xpdbref = &xpdb;
+            printf("loaded %u airports from xplane\n", (uint32_t)xpdbref->airports_count);
+        }else {
+            printf("failed to load xpdb!\n");
+        }
+    }
 
     dxAtcMetarInit(&metar);
     if(!dxAtcMetarParse(metar_str, &metar))
@@ -65,9 +107,13 @@ int main(int argc, char* argv[])
     metar.qnh = 999;
 #endif
 
-    dxAtcMetarDecode(decoded, sizeof(decoded), 0, &metar);
+    printf("decoding: %s\n\n", metar_str);
+
+    dxAtcMetarDecode(decoded, sizeof(decoded), 0, &metar, xpdbref);
     printf("%s", decoded);
 
+    if(xpdbref)
+        dxAtcAirportDbFree(xpdbref);
 
     dxAtcMetarFree(&metar);
 }
