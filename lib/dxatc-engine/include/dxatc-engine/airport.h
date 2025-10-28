@@ -9,11 +9,24 @@
 
 #include <stddef.h>
 
+typedef enum
+{
+    DXATC_ENGINE_AIRPORT_RUNWAY_TYPE_LAND,
+    /* DXATC_ENGINE_AIRPORT_RUNWAY_TYPE_SEA, */
+    /* DXATC_ENGINE_AIRPORT_RUNWAY_TYPE_HELIPAD, */
+}DxAtcRunwayType;
+
+typedef struct{
+    DxAtcLatLon latlon;
+    DxAtcRunwayNumber number;
+    float threshold;
+    float blastpad;
+}DxAtcAirportRunwayEnd;
+
 typedef struct
 {
-    DxAtcLatLon latlon_end1, latlon_end2;
-    DxAtcRunwayNumber number_end1;
-    DxAtcRunwayNumber number_end2;
+    DxAtcRunwayType type;
+    DxAtcAirportRunwayEnd ends[2];
 }DxAtcAirportRunway;
 
 typedef struct
@@ -26,7 +39,7 @@ typedef struct
     DxAtcAirportTaxiwayPoint** points;
 }DxAtcAirportTaxiwayLine;
 
-typedef struct 
+typedef struct
 {
     char* name;
     DxAtcAirportTaxiwayLine** lines;
@@ -43,12 +56,13 @@ typedef struct
 {
     DxAtcLatLon latlon;
     DxAtcAirportICAO icao;
-    char name[32];
+    char name[64];
     int elev_msl;
     int transition_alt;
     int transition_lvl;
     DxAtcAirportTaxiway** taxiways;
     DxAtcAirportRunway** runways;
+    size_t runways_count;
 }DxAtcAirport;
 
 typedef struct

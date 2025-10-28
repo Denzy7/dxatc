@@ -6,7 +6,7 @@ option(DXATC_BUILD_TESTS "Build tests" ON)
 if(MSYS OR UNIX OR MINGW)
     add_compile_options("-Wall" "-Wextra" "-Wformat" "-Wno-unused-result"
 
-        #taste 
+        #taste
         "-Wdeclaration-after-statement"
     )
 endif()
@@ -23,7 +23,7 @@ endif()
 #endif()
 #add_compile_definitions("XPLM303" "XPLM301" "XPLM300" "XPLM210" "XPLM200")
 
-set(DXATC_XPSDK_INCLUDE_DIRS 
+set(DXATC_XPSDK_INCLUDE_DIRS
     "${DXATC_XPSDK}/CHeaders/Widgets"
     "${DXATC_XPSDK}/CHeaders/Wrappers"
     "${DXATC_XPSDK}/CHeaders/XPLM")

@@ -1,4 +1,5 @@
 #include <dxatc-engine/airport_xplane.h>
+#include <dxatc-engine/latlon.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -8,6 +9,9 @@ int main(int argc, char* argv[])
 {
     DxAtcAirportDb db;
     size_t i;
+    DxAtcAirportRunway* rwy;
+    DxAtcAirportRunwayEnd* rwyend;
+    float rwylen, lda;
 
     if(argc < 2)
     {
@@ -27,12 +31,10 @@ int main(int argc, char* argv[])
     while(db.airports[i] && i < 25)
     {
         printf(
-                "airport:%s\n"
-                "\ticao:%s\n"
+                "airport:%s (%s)\n"
                 "\tlatlon:[%f, %f]\n"
                 "\ttrans_alt:%d\n"
                 "\ttrans_lvl:%d\n"
-                "\n"
                 ,
                 db.airports[i]->name,
                 db.airports[i]->icao,
@@ -41,6 +43,25 @@ int main(int argc, char* argv[])
                 db.airports[i]->transition_alt,
                 db.airports[i]->transition_alt
               );
+        printf("\trunways:\n");
+        for(size_t j = 0; j < db.airports[i]->runways_count; j++)
+        {
+            rwy = db.airports[i]->runways[j];
+            rwylen = dxAtcLatLonDistanceNMI(rwy->ends[0].latlon, rwy->ends[1].latlon);
+
+            printf("\t\t%s/%s\n", rwy->ends[0].number, rwy->ends[1].number);
+
+            for(size_t k = 0; k < 2; k++)
+            {
+                rwyend = &rwy->ends[k];
+                lda = ((rwylen * DXATC_UTILS_MACROS_NMI_TO_M) - rwyend->blastpad - rwyend->threshold) * DXATC_UTILS_MACROS_M_TO_FT;
+                printf("\t\t\t%s latlon:[%f, %f] lda:%.0fft\n",
+                        rwyend->number, rwyend->latlon[0], rwyend->latlon[1], lda);
+            }
+
+        }
+
+        printf("\n");
         i++;
     }
 

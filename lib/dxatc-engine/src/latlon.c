@@ -2,7 +2,7 @@
 
 #include <math.h>
 
-float DxAtcLatLonDistanceNMI(DxAtcLatLon a, DxAtcLatLon b)
+float dxAtcLatLonDistanceNMI(DxAtcLatLon a, DxAtcLatLon b)
 {
     float difx = b[0] - a[0];
     float dify = b[1] - a[1];

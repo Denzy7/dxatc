@@ -12,6 +12,7 @@ int dxAtcAirportDbXPlaneLoad(const char* xplanepath, DxAtcAirportDb* db)
     FILE* defaultaptdat;
     char linebf[2048];
     DxAtcAirport apt, *aptcpy;
+    DxAtcAirportRunway *rwycpy;
     /*char aptfmtstr[32];*/
     char xp1302_label[33], xp1302_data[65];
     int objid = 0;
@@ -35,7 +36,7 @@ int dxAtcAirportDbXPlaneLoad(const char* xplanepath, DxAtcAirportDb* db)
     airports = &db->airports;
     count = &db->airports_count;
 
-    snprintf(defaultaptdatpath, sizeof(defaultaptdatpath), 
+    snprintf(defaultaptdatpath, sizeof(defaultaptdatpath),
             "%s/Resources/default scenery/default apt dat/Earth nav data/apt.dat",
             xplanepath);
 
@@ -53,6 +54,11 @@ int dxAtcAirportDbXPlaneLoad(const char* xplanepath, DxAtcAirportDb* db)
 
         if((objid == 1 && !firstapt) || objid == 99){
 
+            if(apt.latlon[0] == 0 && apt.latlon[1] == 0 && apt.runways[0])
+            {
+                memcpy(apt.latlon, apt.runways[0]->ends[0].latlon, sizeof(apt.latlon));
+            }
+
             aptcpy = malloc(sizeof(DxAtcAirport));
             memcpy(aptcpy, &apt, sizeof(DxAtcAirport));
             vvtor_push((void***)airports, aptcpy);
@@ -64,9 +70,11 @@ int dxAtcAirportDbXPlaneLoad(const char* xplanepath, DxAtcAirportDb* db)
         if(objid == 1 && lineno > 0){
             memset(&apt, 0, sizeof(apt));
 
-            sscanf(linebf, "%d%d%*d%*d%32s %32c", &objid, &apt.elev_msl, apt.icao, apt.name);
+            sscanf(linebf, "%d%d%*d%*d%32s %63c", &objid, &apt.elev_msl, apt.icao, apt.name);
             apt.name[strlen(apt.name) - 1] = 0;
             firstapt = 0;
+
+            vvtor_init((void***)&apt.runways);
         }
         if(objid == 1302)
         {
@@ -81,8 +89,38 @@ int dxAtcAirportDbXPlaneLoad(const char* xplanepath, DxAtcAirportDb* db)
                 sscanf(xp1302_data, "%d", &apt.transition_lvl);
         }
 
+        if(objid == 100)
+        {
+            rwycpy = malloc(sizeof(DxAtcAirportRunway));
+            /*rwycpy->type = DXATC_ENGINE_AIRPORT_RUNWAY_TYPE_LAND;*/
+            sscanf(linebf,
+                    "%*d%*f%*d%*d%*f%*d%*d%*d"
+
+                    "%s%f%f%f%f%*d%*d%*d%*d"
+                    "%s%f%f%f%f%*d%*d%*d%*d"
+                    ,
+
+                    rwycpy->ends[0].number,
+                    &rwycpy->ends[0].latlon[0],
+                    &rwycpy->ends[0].latlon[1],
+                    &rwycpy->ends[0].threshold,
+                    &rwycpy->ends[0].blastpad,
+
+                    rwycpy->ends[1].number,
+                    &rwycpy->ends[1].latlon[0],
+                    &rwycpy->ends[1].latlon[1],
+                    &rwycpy->ends[1].threshold,
+                    &rwycpy->ends[1].blastpad
+                  );
+            vvtor_push((void***)&apt.runways, rwycpy);
+            apt.runways_count++;
+        }
+
         lineno++;
     }
+
+
+    fclose(defaultaptdat);
 
     /* TODO: override with custom scenery */
 

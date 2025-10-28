@@ -13,7 +13,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <ws2tcpip.h>
-#else   
+#else
 #include <sys/socket.h> /* socket */
 #include <arpa/inet.h> /* inet_aton */
 #include <netdb.h> /* getaddrinfo */
@@ -24,7 +24,7 @@
 typedef int xint;
 typedef char xchr;
 typedef float xflt;
-/* we use drefs to fetch, more precise weather even 
+/* we use drefs to fetch, more precise weather even
  * when interpolated*/
 struct dref_struct_in
 {
@@ -50,7 +50,7 @@ int dxAtcMetarXPlaneFetch(const char* ip, DxAtcMetar* metar, const DxAtcAirportD
 {
     float cloud_type[3], cloud_base[3];
     /* we only need the first component,
-     * we'll get all 3 to make xplane happy 
+     * we'll get all 3 to make xplane happy
      */
     float wind_alt[3], wind_dir[3], wind_speed[3], wind_shear_dir[3], wind_shear_speed[3];
     float rain_pc, thunderstorm_pc;
@@ -59,7 +59,7 @@ int dxAtcMetarXPlaneFetch(const char* ip, DxAtcMetar* metar, const DxAtcAirportD
     float vis;
     DxAtcLatLon acftlatlon;
 
-    struct dref_array drefs[] = 
+    struct dref_array drefs[] =
     {
         {"sim/weather/cloud_type", 3, cloud_type},
         {"sim/weather/cloud_base_msl_m", 3, cloud_base},
@@ -108,7 +108,7 @@ int dxAtcMetarXPlaneFetch(const char* ip, DxAtcMetar* metar, const DxAtcAirportD
     int msl = 0;
     float shortest = 999.0f, disttoplane;
     time_t zulu;
- 
+
     if(!metar->sky)
     {
         fprintf(stderr, "metar must be init to fetch from xplane");
@@ -212,7 +212,7 @@ int dxAtcMetarXPlaneFetch(const char* ip, DxAtcMetar* metar, const DxAtcAirportD
     recvbuf_sz = 5 + (n * sizeof(struct dref_struct_out));
     recvbuf = malloc(recvbuf_sz);
 
-    i = 0; 
+    i = 0;
     while(drefs_vtor[i])
     {
         snprintf(sendbuf, sizeof(sendbuf), "%s", "RREF");
@@ -231,7 +231,7 @@ int dxAtcMetarXPlaneFetch(const char* ip, DxAtcMetar* metar, const DxAtcAirportD
         /* tell xplane to stop sending */
         snprintf(sendbuf, sizeof(sendbuf), "%s", "RREF");
         dref = (struct dref_struct_in*)(sendbuf + 5);
-        memcpy(dref, drefs_vtor[i], sizeof(struct dref_struct_in));        
+        memcpy(dref, drefs_vtor[i], sizeof(struct dref_struct_in));
         dref->dref_freq = 0;
         sendto(sock, sendbuf, sizeof(sendbuf), 0, (struct sockaddr*)&xpaddr, sizeof(xpaddr));
 
@@ -244,10 +244,9 @@ int dxAtcMetarXPlaneFetch(const char* ip, DxAtcMetar* metar, const DxAtcAirportD
     if(db){
         for(size_t i = 0; i < db->airports_count; i++)
         {
-            disttoplane = DxAtcLatLonDistanceNMI(acftlatlon, db->airports[i]->latlon);
+            disttoplane = dxAtcLatLonDistanceNMI(acftlatlon, db->airports[i]->latlon);
             if(disttoplane < shortest)
             {
-                /*TODO: not as precise as using runway latlon */
                 dxAtcAirportDbFind(db->airports[i]->icao, &findapt, db);
                 shortest = disttoplane;
             }
@@ -285,7 +284,7 @@ int dxAtcMetarXPlaneFetch(const char* ip, DxAtcMetar* metar, const DxAtcAirportD
     metar->wind.direction /= 10;
     metar->wind.direction *= 10;
     metar->wind.speed = wind_speed[0];
-    metar->wind.gust = wind_speed[0] + wind_shear_speed[0]; 
+    metar->wind.gust = wind_speed[0] + wind_shear_speed[0];
     /*TODO: check if 30 is enough to consider variable
      * xplane consideres it enough*/
     if(wind_shear_dir[0] > 30.0f)

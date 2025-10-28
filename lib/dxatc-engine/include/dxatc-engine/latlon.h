@@ -6,7 +6,7 @@
 
 DXATC_UTILS_MACROS_CDECLS_BEGIN
 
-float DxAtcLatLonDistanceNMI(DxAtcLatLon a, DxAtcLatLon b);
+float dxAtcLatLonDistanceNMI(DxAtcLatLon a, DxAtcLatLon b);
 
 DXATC_UTILS_MACROS_CDECLS_END
 #endif

@@ -21,10 +21,18 @@ void dxAtcAirportDbFree(DxAtcAirportDb* db)
 {
     for(size_t i = 0; i < db->airports_count; i++)
     {
-        if(db->airports[i])
+        if(db->airports[i]){
+            for(size_t j = 0; j < db->airports[i]->runways_count; j++)
+            {
+                if(db->airports[i]->runways[j])
+                    free(db->airports[i]->runways[j]);
+            }
+            free(db->airports[i]->runways);
             free(db->airports[i]);
-        else
+        }
+        else{
             break;
+        }
     }
     free(db->airports);
 }
