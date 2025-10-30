@@ -4,6 +4,7 @@
 #include "dxatc-engine/aircraft.h"
 #include "dxatc-engine/airline.h"
 #include "dxatc-engine/types.h"
+#include "dxatc-engine/controller.h"
 
 #include "dxatc-utils/macros.h"
 
@@ -63,6 +64,8 @@ typedef struct
     DxAtcAirportTaxiway** taxiways;
     DxAtcAirportRunway** runways;
     size_t runways_count;
+    DxAtcController** controllers;
+    size_t controllers_count;
 }DxAtcAirport;
 
 typedef struct

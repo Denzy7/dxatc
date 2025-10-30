@@ -7,6 +7,7 @@
 typedef enum
 {
     DXATC_ENGINE_CONTROLLER_TYPE_ATIS,
+    DXATC_ENGINE_CONTROLLER_TYPE_CTAF,
     DXATC_ENGINE_CONTROLLER_TYPE_CLEARANCE,
     DXATC_ENGINE_CONTROLLER_TYPE_GROUND,
     DXATC_ENGINE_CONTROLLER_TYPE_TOWER,
@@ -34,7 +35,7 @@ typedef struct
     DxAtcLatLon latlon;
     int range;
 
-    char* name;
+    char name[128];
 }DxAtcController;
 
 #endif

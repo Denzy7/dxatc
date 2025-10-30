@@ -23,6 +23,7 @@ set(dxatc-engine-src
     src/airport.c
     src/airport_xplane.c
     src/latlon.c
+    src/frequency.c
 )
 set(dxatc-engine-link dxatc-utils)
 

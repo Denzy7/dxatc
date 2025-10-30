@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <ctype.h>
 
 int dxAtcAirportDbXPlaneLoad(const char* xplanepath, DxAtcAirportDb* db)
 {
@@ -13,13 +14,23 @@ int dxAtcAirportDbXPlaneLoad(const char* xplanepath, DxAtcAirportDb* db)
     char linebf[2048];
     DxAtcAirport apt, *aptcpy;
     DxAtcAirportRunway *rwycpy;
+    DxAtcController* atccpy;
     /*char aptfmtstr[32];*/
     char xp1302_label[33], xp1302_data[65];
     int objid = 0;
     int firstapt = 1;
     uint32_t lineno = 0;
+
     DxAtcAirport*** airports = NULL;
     size_t* count = NULL;
+
+    char* findstr = NULL;
+    /* a subtle way to tell compiler to stfu with truncation warnings
+     * we are tho truncating to a smaller buffer.
+     * have you ever heard of an ATC callsign longer than 63 characters tho???
+     * */
+    char*speci_atc_name;
+    char controllername_location[64], controllername_type[64];
 
     if(xplanepath == NULL)
     {
@@ -53,10 +64,95 @@ int dxAtcAirportDbXPlaneLoad(const char* xplanepath, DxAtcAirportDb* db)
         sscanf(linebf, "%d", &objid);
 
         if((objid == 1 && !firstapt) || objid == 99){
+            /* some post processing */
 
             if(apt.latlon[0] == 0 && apt.latlon[1] == 0 && apt.runways[0])
             {
                 memcpy(apt.latlon, apt.runways[0]->ends[0].latlon, sizeof(apt.latlon));
+            }
+            for(size_t i = 0; i < apt.controllers_count; i++)
+            {
+                atccpy = apt.controllers[i];
+                memset(controllername_location, 0, sizeof(controllername_location));
+                memset(controllername_type, 0, sizeof(controllername_type));
+                speci_atc_name = NULL;
+
+                if(atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_ATIS)
+                {
+                    snprintf(controllername_type, sizeof(controllername_type), "ATIS");
+                }
+                else if(atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_CTAF)
+                {
+                    snprintf(controllername_location, sizeof(controllername_location), "%s", apt.name);
+                    snprintf(controllername_type, sizeof(controllername_type), "Traffic");
+                }
+                else if(atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_CLEARANCE)
+                {
+                    snprintf(controllername_type, sizeof(controllername_type), "Clearance");
+                }else if(atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_GROUND)
+                {
+                    snprintf(controllername_type, sizeof(controllername_type), "Ground");
+                }
+                else if(atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_TOWER)
+                {
+                    findstr = strstr(atccpy->name, " TWR");
+                    if(findstr)
+                    {
+                        *findstr = 0;
+                        speci_atc_name = strdup(atccpy->name);
+                        findstr = speci_atc_name;
+                    }else {
+                        findstr = "";
+                    }
+
+                    snprintf(controllername_location, sizeof(controllername_location), "%s", findstr);
+                    snprintf(controllername_type, sizeof(controllername_type), "Tower");
+                    if(speci_atc_name)
+                        free(speci_atc_name);
+                }
+                else if(atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_APPROACH || atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_DEPARTURE)
+                {
+                    findstr = strstr(atccpy->name, " APP/DEP");
+
+                    if(!findstr)
+                        findstr = strstr(atccpy->name, " APP");
+                    if(!findstr)
+                        findstr = strstr(atccpy->name, " DEP");
+
+                    if(findstr){
+                        *findstr = 0;
+                        speci_atc_name = strdup(atccpy->name);
+                        findstr = speci_atc_name;
+                    }
+                    else{
+                        findstr = "";
+                    }
+
+                    snprintf(controllername_location, sizeof(controllername_location), "%s", findstr);
+                    snprintf(controllername_type,
+                            sizeof(controllername_type), "%s",
+                            atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_APPROACH ? "Approach" : "Departure");
+
+                    if(speci_atc_name)
+                        free(speci_atc_name);
+                }
+
+                snprintf(atccpy->name, sizeof(atccpy->name), "%s%s%s",
+                        controllername_location,
+                        strlen(controllername_location) ? " " : "",
+                        controllername_type);
+
+                if(atccpy->type > DXATC_ENGINE_CONTROLLER_TYPE_ATIS){
+
+                    atccpy->name[0] = toupper(atccpy->name[0]);
+                    for(size_t j = 1; j < strlen(atccpy->name); j++)
+                    {
+                        if(atccpy->name[j - 1] != ' ')
+                            atccpy->name[j] = tolower(atccpy->name[j]);
+                        else
+                            atccpy->name[j] = toupper(atccpy->name[j]);
+                    }
+                }
             }
 
             aptcpy = malloc(sizeof(DxAtcAirport));
@@ -75,6 +171,7 @@ int dxAtcAirportDbXPlaneLoad(const char* xplanepath, DxAtcAirportDb* db)
             firstapt = 0;
 
             vvtor_init((void***)&apt.runways);
+            vvtor_init((void***)&apt.controllers);
         }
         if(objid == 1302)
         {
@@ -91,7 +188,7 @@ int dxAtcAirportDbXPlaneLoad(const char* xplanepath, DxAtcAirportDb* db)
 
         if(objid == 100)
         {
-            rwycpy = malloc(sizeof(DxAtcAirportRunway));
+            rwycpy = calloc(1, sizeof(DxAtcAirportRunway));
             /*rwycpy->type = DXATC_ENGINE_AIRPORT_RUNWAY_TYPE_LAND;*/
             sscanf(linebf,
                     "%*d%*f%*d%*d%*f%*d%*d%*d"
@@ -116,6 +213,24 @@ int dxAtcAirportDbXPlaneLoad(const char* xplanepath, DxAtcAirportDb* db)
             apt.runways_count++;
         }
 
+
+        if((objid >= 50 && objid <= 56) || (objid >= 1050 && objid <= 1056))
+        {
+            atccpy = calloc(1, sizeof(DxAtcController));
+            if(objid >= 1050)
+                atccpy->type = objid - 1050;
+            if(objid <= 56)
+                atccpy->type = objid - 50;
+            sscanf(linebf, "%*d%6s %31c", atccpy->freq, atccpy->name);
+
+            vvtor_push((void***)&apt.controllers, atccpy);
+            apt.controllers_count++;
+        }
+
+        /* not resetting objid causes the previous
+         * objid to be parsed if an empty line is read by fgets
+         */
+        objid = 0;
         lineno++;
     }
 
