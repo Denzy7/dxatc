@@ -19,16 +19,28 @@ int dxAtcAirportDbFind(const DxAtcAirportICAO icao, DxAtcAirport** apt, const Dx
 
 void dxAtcAirportDbFree(DxAtcAirportDb* db)
 {
+    DxAtcAirport* apt = NULL;
+    DxAtcAirportRunway* rwy = NULL;
+    DxAtcController* con = NULL;
     for(size_t i = 0; i < db->airports_count; i++)
     {
-        if(db->airports[i]){
-            for(size_t j = 0; j < db->airports[i]->runways_count; j++)
+        apt = db->airports[i];
+        if(apt){
+            for(size_t j = 0; j < apt->runways_count; j++)
             {
-                if(db->airports[i]->runways[j])
-                    free(db->airports[i]->runways[j]);
+                rwy = apt->runways[j];
+                if(rwy)
+                    free(rwy);
             }
-            free(db->airports[i]->runways);
-            free(db->airports[i]);
+            for(size_t j = 0; j < apt->controllers_count; j++)
+            {
+                con = apt->controllers[j];
+                if(con)
+                    free(con);
+            }
+            free(apt->controllers);
+            free(apt->runways);
+            free(apt);
         }
         else{
             break;
