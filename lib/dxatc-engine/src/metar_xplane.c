@@ -284,7 +284,8 @@ int dxAtcMetarXPlaneFetch(const char* ip, DxAtcMetar* metar, const DxAtcAirportD
     metar->wind.direction /= 10;
     metar->wind.direction *= 10;
     metar->wind.speed = wind_speed[0];
-    metar->wind.gust = wind_speed[0] + wind_shear_speed[0];
+    if(wind_shear_speed[0] > 1.0f)
+        metar->wind.gust = wind_speed[0] + wind_shear_speed[0];
     /*TODO: check if 30 is enough to consider variable
      * xplane consideres it enough*/
     if(wind_shear_dir[0] > 30.0f)
