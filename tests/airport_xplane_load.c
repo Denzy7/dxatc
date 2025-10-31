@@ -39,8 +39,10 @@ void dumpapt(DxAtcAirport* apt)
         {
             rwyend = &rwy->ends[k];
             lda = ((rwylen * DXATC_UTILS_MACROS_NMI_TO_M) - rwyend->blastpad - rwyend->threshold) * DXATC_UTILS_MACROS_M_TO_FT;
-            printf("\t\t\t%s latlon:[%f, %f] lda:%.0fft\n",
-                    rwyend->number, rwyend->latlon[0], rwyend->latlon[1], lda);
+            printf("\t\t\t%s latlon:[%f, %f] length:%.0fft lda:%.0fft\n",
+                    rwyend->number, rwyend->latlon[0], rwyend->latlon[1],
+                    rwylen * DXATC_UTILS_MACROS_NMI_TO_FT,
+                    lda);
         }
 
     }
