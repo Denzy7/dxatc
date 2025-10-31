@@ -1,9 +1,7 @@
 #add_library(add_ai_plane SHARED add_ai_plane.c)
-add_executable(metar_decode metar_decode.c)
-target_link_libraries(metar_decode PRIVATE dxatc-engine dxatc-utils)
-
-add_executable(metar_decode_xplane metar_decode_xplane.c)
-target_link_libraries(metar_decode_xplane PRIVATE dxatc-engine dxatc-utils)
-
-add_executable(airport_xplane_load airport_xplane_load.c)
-target_link_libraries(airport_xplane_load PRIVATE dxatc-engine dxatc-utils)
+file(GLOB tests *.c)
+foreach(test ${tests})
+    get_filename_component(test_tgt ${test} NAME_WE)
+    add_executable(${test_tgt} ${test})
+    target_link_libraries(${test_tgt} PRIVATE dxatc-engine dxatc-utils)
+endforeach()

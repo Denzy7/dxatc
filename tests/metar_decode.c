@@ -10,7 +10,7 @@
 int main(int argc, char* argv[])
 {
     DxAtcMetar metar;
-    const char* metar_str = "METAR XYAB 011200Z VRB12G15KT 6000 TSRA FEW010 BKN025CB OVC///TCU 21/20 Q0999";
+    const char* metar_str = DXATC_ENGINE_METAR_TEST;
     /* set 1 to overwrite with test data (default metar_str decoded)*/
 #if 0
     DxAtcWeatherCloud cloud1 = {DXATC_ENGINE_WEATHER_CLOUD_TYPE_FEW, DXATC_ENGINE_WEATHER_CLOUD_FLAG_NONE, 1000};

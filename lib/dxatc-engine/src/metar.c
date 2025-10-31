@@ -532,8 +532,7 @@ int dxAtcMetarDecode(char* string, size_t length, DxAtcMetarDecodeFlag flags, co
             "%s"
             "Sky %s"
             "Temperature %d. Dewpoint %d. "
-            "%s"
-            "\n",
+            "%s",
             apt == NULL ? metar->icao : apt->name, metar->zulu, 
             wind,
             visibility,

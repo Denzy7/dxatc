@@ -11,7 +11,7 @@ typedef enum
     DXATC_ENGINE_TRANSPONDER_MODE_S = 1 << 2
 }DxAtcTransponderMode;
 
-typedef enum 
+typedef enum
 {
     DXATC_ENGINE_TRANSPONDER_NAVMODE_NONE = 0,
     DXATC_ENGINE_TRANSPONDER_NAVMODE_AUTOPILOT = 1,
