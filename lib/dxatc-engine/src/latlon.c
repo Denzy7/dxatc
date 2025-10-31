@@ -6,11 +6,13 @@
 #define _DXATC_LATLON_EARTHRADIUS_NMI 3440.172786177106f
 float _dxAtcLatLonAHavSin(float havsin)
 {
-    return acos(1.0f - (2.0f * havsin));
+    float x = sqrt(havsin);
+    return 2.0f * asin(x);
 }
 float _dxAtcLatLonHavSin(float radian)
 {
-    return (1.0f - cos(radian)) / 2.0f;
+    float x = sin(radian / 2.0f);
+    return pow(x, 2.0f);
 }
 float dxAtcLatLonDistanceNMI(DxAtcLatLon a, DxAtcLatLon b)
 {
