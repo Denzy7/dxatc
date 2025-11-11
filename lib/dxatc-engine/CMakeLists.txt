@@ -15,6 +15,7 @@ set(dxatc-engine-hdr
     include/dxatc-engine/flightplan.h
     include/dxatc-engine/transponder.h
     include/dxatc-engine/frequency.h
+    include/dxatc-engine/stdphrase.h
 )
 
 set(dxatc-engine-src
@@ -24,6 +25,7 @@ set(dxatc-engine-src
     src/airport_xplane.c
     src/latlon.c
     src/frequency.c
+    src/stdphrase.c
 )
 set(dxatc-engine-link dxatc-utils)
 

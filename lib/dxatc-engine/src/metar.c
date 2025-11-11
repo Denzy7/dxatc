@@ -471,7 +471,6 @@ int dxAtcMetarDecode(char* string, size_t length, DxAtcMetarDecodeFlag flags, co
     {
         int nsky = 0;
         size_t wsky = snprintf(sky, sizeof(sky), "conditions. ");
-        
         while(metar->sky[nsky] && wsky < sizeof(sky))
         {
             int write = 0;
@@ -492,8 +491,6 @@ int dxAtcMetarDecode(char* string, size_t length, DxAtcMetarDecodeFlag flags, co
                 snprintf(flag, sizeof(flag), "cumulonimbus");
             else if(metar->sky[nsky]->flags == DXATC_ENGINE_WEATHER_CLOUD_FLAG_TCU)
                 snprintf(flag, sizeof(flag), "towering cumulonimbus");
-            else
-                snprintf(flag, sizeof(flag), "clouds");
 
             memset(alt, 0, sizeof(alt));
             if(metar->sky[nsky]->agl)
@@ -501,7 +498,7 @@ int dxAtcMetarDecode(char* string, size_t length, DxAtcMetarDecodeFlag flags, co
             else
                 snprintf(alt, sizeof(type), "indefinite");
 
-            write = snprintf(sky + wsky, sizeof(sky) - wsky, "%s %s %s. ", type, flag, alt);
+            write = snprintf(sky + wsky, sizeof(sky) - wsky, "%s %s clouds %s. ", type, flag, alt);
 
             wsky += write;
             nsky++;

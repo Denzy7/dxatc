@@ -1,0 +1,10 @@
+#ifndef DXATC_ENGINE_XPLANE_H
+#define DXATC_ENGINE_XPLANE_H
+
+typedef enum
+{
+    DXATC_ENGINE_XPLANE_VERSION_11,
+    DXATC_ENGINE_XPLANE_VERSION_12,
+}DxAtcXPlaneVersion;
+
+#endif

@@ -14,6 +14,8 @@ int dxAtcFrequencyFormat(DxAtcFrequencyFormatted formatted, const DxAtcFrequency
 
 int dxAtcFrequencySplit(int* mhz, int* khz, const DxAtcFrequency frequency);
 
+int dxAtcFrequencyParse(const char* str, DxAtcFrequency frequency);
+
 DXATC_UTILS_MACROS_CDECLS_END
 
 

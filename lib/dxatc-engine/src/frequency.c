@@ -21,3 +21,16 @@ int dxAtcFrequencySplit(int* mhz, int* khz, const DxAtcFrequency frequency)
 
     return 1;
 }
+
+int dxAtcFrequencyParse(const char* str, DxAtcFrequency frequency)
+{
+    sscanf(str, "%3c.%3c", frequency, frequency + 3);
+    if(frequency[5] == 0){
+        frequency[5] = '0';
+        if(frequency[4] == 0)
+        {
+            frequency[4] = '0';
+        }
+    }
+    return 1;
+}

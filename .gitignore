@@ -3,4 +3,5 @@
 *.vim
 build/*
 *.user*
+vgcore.*
 priv
