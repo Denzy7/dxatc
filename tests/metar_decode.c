@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
     printf("decoding: %s\n\n", metar_str);
 
     dxAtcMetarDecode(decoded, sizeof(decoded), 0, &metar, xpdbref);
-    printf("%s", decoded);
+    printf("%s\n", decoded);
 
     if(xpdbref)
         dxAtcAirportDbFree(xpdbref);

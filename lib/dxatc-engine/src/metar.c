@@ -369,7 +369,7 @@ int dxAtcMetarDecode(char* string, size_t length, DxAtcMetarDecodeFlag flags, co
     if(metar->wind.direction < 0)
         snprintf(wind_direction, sizeof(wind_direction), "variable");
     else
-        snprintf(wind_direction, sizeof(wind_direction), "%d", metar->wind.direction);
+        snprintf(wind_direction, sizeof(wind_direction), "%s%d", metar->wind.direction < 100 ? "0" : "", metar->wind.direction);
 
     memset(wind_variable, 0, sizeof(wind_variable));
     if(metar->wind.variable_x && metar->wind.variable_y)
@@ -509,7 +509,7 @@ int dxAtcMetarDecode(char* string, size_t length, DxAtcMetarDecodeFlag flags, co
 
     memset(altimeter, 0, sizeof(altimeter));
 
-    snprintf(altimeter, sizeof(altimeter), "QNH %d", metar->qnh);
+    snprintf(altimeter, sizeof(altimeter), "QNH %s%d", metar->qnh < 1000 ? "0" : "",metar->qnh);
     if(flags & DXATC_ENGINE_METAR_DECODE_FLAG_ALTIMETER_INHG)
     {
         /* +/- 3 error if we parsed inhg to hpa.
