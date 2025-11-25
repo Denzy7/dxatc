@@ -6,7 +6,7 @@
 
 DXATC_UTILS_MACROS_CDECLS_BEGIN
 
-const char* dxAtcStrStr(const char* haystack, const char* needle, int ignorecase);
+char* dxAtcStrStr(char* haystack, const char* needle, int ignorecase);
 
 size_t dxAtcStrApp(char* buffer, size_t buffersz, size_t* offset, const char* in, ...);
 

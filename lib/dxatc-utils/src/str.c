@@ -6,12 +6,12 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-const char* dxAtcStrStr(const char* haystack, const char* needle, int ignorecase)
+char* dxAtcStrStr(char* haystack, const char* needle, int ignorecase)
 {
     size_t haystacksz = strlen(haystack);
     size_t needlesz = strlen(needle);
     int match = 1;
-    const char* ret = NULL;
+    char* ret = NULL;
 
     char* needlebf = malloc(needlesz + 1);
     for(size_t i = 0; i < haystacksz; i++)

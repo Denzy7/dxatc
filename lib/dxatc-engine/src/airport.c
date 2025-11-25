@@ -1,13 +1,19 @@
 #include "dxatc-engine/airport.h"
+#include "dxatc-utils/str.h"
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 int dxAtcAirportDbFind(const DxAtcAirportICAO icao, DxAtcAirport** apt, const DxAtcAirportDb* db)
 {
+    DxAtcAirportICAO myicao;
+
+    memset(myicao, 0, sizeof(myicao));
+    snprintf(myicao, sizeof(myicao), "%s", icao);
     for(size_t i = 0; i < db->airports_count; i++)
     {
-        if(strstr(icao, db->airports[i]->icao))
+        if(dxAtcStrStr(myicao, db->airports[i]->icao, 1))
         {
             *apt = db->airports[i];
             return 1;

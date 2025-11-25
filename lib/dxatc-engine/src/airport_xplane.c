@@ -1,11 +1,85 @@
 #include "dxatc-engine/airport_xplane.h"
 #include "dxatc-utils/vvtor.h"
+#include "dxatc-utils/str.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <ctype.h>
+
+
+#define _DXATC_ENGINE_AIRPORT_XPLANE_ATCNAME_MAXNAMES 1 + 4 /* must have atleast 1  + extra names*/
+#define _DXATC_ENGINE_AIRPORT_XPLANE_ATCNAME_MAXKWDS 1 + 4 /* 1 for the actual name + extra kwds */
+static const char* const atcname_type
+[DXATC_ENGINE_CONTROLLER_TYPE_COUNT]
+[_DXATC_ENGINE_AIRPORT_XPLANE_ATCNAME_MAXNAMES]
+[_DXATC_ENGINE_AIRPORT_XPLANE_ATCNAME_MAXKWDS] = {
+    {
+        /* atis, awos,... */
+        {"ATIS"},
+        {"AWOS"},
+        /*{"ATIS Departure", "ATIS Dep"},*/
+        /*{"ATIS Arrival", "ATIS Arr"}*/
+    },
+    {
+        /* ctaf, unicom ... */
+        {"Traffic", " CTAF"},
+        {"Unicom", " UNICOM"},
+    },
+    {
+        /* clearance */
+        {"Clearance", "CLNC"},
+    },
+    {
+        /* ground, apron */
+        {"Ground", "GND", "Ground", "TAXIING", "-Ground"},
+        {"Apron", "APRON", "-Apron"},
+    },
+    {
+        /* tower */
+        {"Tower", "TWR", "Tower", "-Tower"},
+    },
+    {
+        /* app, director, radar */
+        {"Approach", "APP", "Approach", "APP/DEP"},
+        {"Radar", "RADAR", "RDR"},
+        {"Director", "Director"},
+    },
+    {
+        /* dep, radar */
+        {"Departure", "DEP", "Departure", "APP/DEP"},
+        {"Control", "Control"},
+        {"Radar", " RADAR", " RDR"},
+    },
+    {
+        /* center, flight services */
+        {"Center"},
+    },
+};
+
+char* _dxAtcAirportDbXPlaneAtcLocation(char* atcname, DxAtcControllerType type, int* i)
+{
+    char* findstr = NULL;
+    const char* type_name = NULL;
+    int requestbreak = 0;
+    *i = _DXATC_ENGINE_AIRPORT_XPLANE_ATCNAME_MAXNAMES - 1;
+    while(1)
+    {
+        for(size_t j = 1; j < _DXATC_ENGINE_AIRPORT_XPLANE_ATCNAME_MAXKWDS; j++)
+        {
+            type_name = atcname_type[type][*i][j];
+            if(type_name && (findstr = dxAtcStrStr(atcname, type_name, 1))){
+                requestbreak = 1;
+                break;
+            }
+        }
+        if(*i == 0 || requestbreak)
+            break;
+        (*i)--;
+    }
+    return findstr;
+}
 
 int dxAtcAirportDbXPlaneLoad(const char* xplanepath, DxAtcAirportDb* db)
 {
@@ -31,6 +105,7 @@ int dxAtcAirportDbXPlaneLoad(const char* xplanepath, DxAtcAirportDb* db)
      * */
     char*speci_atc_name;
     char controllername_location[64], controllername_type[64];
+    int ii_atcname;
 
     if(xplanepath == NULL)
     {
@@ -77,65 +152,26 @@ int dxAtcAirportDbXPlaneLoad(const char* xplanepath, DxAtcAirportDb* db)
                 memset(controllername_type, 0, sizeof(controllername_type));
                 speci_atc_name = NULL;
 
-                if(atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_ATIS)
-                {
-                    snprintf(controllername_type, sizeof(controllername_type), "ATIS");
-                }
-                else if(atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_CTAF)
-                {
-                    snprintf(controllername_location, sizeof(controllername_location), "%s", apt.name);
-                    snprintf(controllername_type, sizeof(controllername_type), "Traffic");
-                }
-                else if(atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_CLEARANCE)
-                {
-                    snprintf(controllername_type, sizeof(controllername_type), "Clearance");
-                }else if(atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_GROUND)
-                {
-                    snprintf(controllername_type, sizeof(controllername_type), "Ground");
-                }
-                else if(atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_TOWER)
-                {
-                    findstr = strstr(atccpy->name, " TWR");
-                    if(findstr)
-                    {
-                        *findstr = 0;
-                        speci_atc_name = strdup(atccpy->name);
-                        findstr = speci_atc_name;
-                    }else {
-                        findstr = "";
-                    }
+                findstr = _dxAtcAirportDbXPlaneAtcLocation(atccpy->name, atccpy->type, &ii_atcname);
 
-                    snprintf(controllername_location, sizeof(controllername_location), "%s", findstr);
-                    snprintf(controllername_type, sizeof(controllername_type), "Tower");
-                    if(speci_atc_name)
-                        free(speci_atc_name);
-                }
-                else if(atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_APPROACH || atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_DEPARTURE)
+                if(findstr)
                 {
-                    findstr = strstr(atccpy->name, " APP/DEP");
-
-                    if(!findstr)
-                        findstr = strstr(atccpy->name, " APP");
-                    if(!findstr)
-                        findstr = strstr(atccpy->name, " DEP");
-
-                    if(findstr){
-                        *findstr = 0;
-                        speci_atc_name = strdup(atccpy->name);
-                        findstr = speci_atc_name;
-                    }
-                    else{
-                        findstr = "";
-                    }
-
-                    snprintf(controllername_location, sizeof(controllername_location), "%s", findstr);
-                    snprintf(controllername_type,
-                            sizeof(controllername_type), "%s",
-                            atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_APPROACH ? "Approach" : "Departure");
-
-                    if(speci_atc_name)
-                        free(speci_atc_name);
+                    *findstr = 0;
+                    if(*(findstr - 1) == ' ')
+                        *(findstr - 1) = 0;
+                    speci_atc_name = strdup(atccpy->name);
+                    findstr = speci_atc_name;
+                }else {
+                    findstr = "";
                 }
+
+                snprintf(controllername_location, sizeof(controllername_location),
+                        "%s%s", findstr,
+                        atccpy->type == DXATC_ENGINE_CONTROLLER_TYPE_CTAF && !strlen(findstr) ?
+                            apt.name : "");
+                snprintf(controllername_type, sizeof(controllername_type), "%s", atcname_type[atccpy->type][ii_atcname][0]);
+                if(speci_atc_name)
+                    free(speci_atc_name);
 
                 snprintf(atccpy->name, sizeof(atccpy->name), "%s%s%s",
                         controllername_location,

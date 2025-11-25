@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 void dumpapt(DxAtcAirport* apt)
 {
@@ -85,18 +86,31 @@ int main(int argc, char* argv[])
 {
     DxAtcAirportDb db;
     DxAtcAirport* apt;
-    size_t i;
+    const char* xppath = NULL;
+    const char* apts = NULL;
+    char* apts_cpy = NULL, *apts_ref;
+    const char* icao;
 
     if(argc < 2)
     {
-        fprintf(stderr, "use argv1 to provide xplane location");
+        fprintf(stderr, "use last argv (or -xppath <xplane-path>) to provide xplane location");
         return 1;
     }
+    for(int i = 0; i < argc; i++)
+    {
+        if(strstr("-xppath", argv[i]) && argv[i + 1])
+            xppath = argv[i + 1];
+        if(strstr("-apts", argv[i]) && argv[i + 1])
+            apts = argv[i + 1];
+
+    }
+    if(xppath == NULL)
+        xppath = argv[argc - 1];
 
     memset(&db, 0, sizeof(db));
     printf("loading xpdb... ");
     fflush(stdout);
-    if(!dxAtcAirportDbXPlaneLoad(argv[1], &db))
+    if(!dxAtcAirportDbXPlaneLoad(xppath, &db))
     {
         fprintf(stderr, "failed to load xplane db from %s\n", argv[1]);
         return 1;
@@ -104,24 +118,34 @@ int main(int argc, char* argv[])
     printf("loaded %u airports\n", (uint32_t) db.airports_count);
 
     printf("showing first 25 airports\n");
-    i = 0;
-    while(db.airports[i] && i < 25)
+    for(size_t i = 0; i < 25; i++)
     {
         apt = db.airports[i];
         dumpapt(apt);
-        i++;
     }
 
     printf("showing some cherry picked airports!\n");
-    i = 0;
-    while(i < DXATC_UTILS_MACROS_ARYSZ(interesting))
+    for(size_t i = 0; i < DXATC_UTILS_MACROS_ARYSZ(interesting); i++)
     {
-        dxAtcAirportDbFind(interesting[i], &apt, &db);
-        if(apt)
+        if(dxAtcAirportDbFind(interesting[i], &apt, &db))
             dumpapt(apt);
-        i++;
     }
 
+    if(apts == NULL)
+    {
+        printf("you can use -apts [comma_seprated_icao_codes] to list infos about specific airports");
+    }else {
+        apts_cpy = strdup(apts);
+        apts_ref = apts_cpy;
+        while((icao = strtok(apts_ref, ",")))
+        {
+            apt = NULL;
+            apts_ref = NULL;
+            if(dxAtcAirportDbFind(icao, &apt, &db))
+                dumpapt(apt);
+        }
+        free(apts_cpy);
+    }
 
     dxAtcAirportDbFree(&db);
 
